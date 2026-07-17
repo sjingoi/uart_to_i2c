@@ -18,7 +18,7 @@ pico_enable_stdio_usb(converter 1)
 
 pico_add_extra_outputs(converter)
 
-target_link_libraries(converter pico_stdlib)
+target_link_libraries(converter pico_stdlib hardware_uart)
 
 # Driver binary
 
@@ -29,4 +29,4 @@ pico_enable_stdio_usb(driver 1)
 
 pico_add_extra_outputs(driver)
 
-target_link_libraries(driver pico_stdlib)
+target_link_libraries(driver pico_stdlib hardware_uart)

@@ -1,26 +1,54 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
-#include "hardware/gpio.h"
-#include "pico/binary_info.h"
+#include "hardware/uart.h"
 
-#define LED_PIN 25 // On board LED
+#define UART0_TX_PIN 0
+#define UART0_RX_PIN 1
+#define UART1_TX_PIN 8
+#define UART1_RX_PIN 9
+
+char str_buf[1024];
+
+void on_uart0_rx() {
+    while (uart_is_readable(uart0)) {
+        uint8_t ch = uart_getc(uart0);
+
+        if (uart_is_writable(uart1)) {
+            // Forward to converter pico
+            uart_putc(uart1, ch);
+            
+            snprintf(str_buf, 1024, "Sent byte %d\n\r", ch);
+            uart_puts(uart0, str_buf);
+        }
+    }
+}
 
 int main() {
-    bi_decl(bi_program_description("This is a test binary."));
-    bi_decl(bi_1pin_with_name(LED_PIN, "On-board LED"));
+    
+    // Set up UART connection to computer
+    uart_init(uart0, 115200);
+    gpio_set_function(UART0_TX_PIN, UART_FUNCSEL_NUM(uart0, UART0_TX_PIN));
+    gpio_set_function(UART0_RX_PIN, UART_FUNCSEL_NUM(uart0, UART0_RX_PIN));
+    
+    uart_set_hw_flow(uart0, false, false);
+    uart_set_format(uart0, 8, 1, UART_PARITY_NONE);
+    uart_set_fifo_enabled(uart0, false);
+    
+    irq_set_exclusive_handler(UART0_IRQ, on_uart0_rx);
+    irq_set_enabled(UART0_IRQ, true);
+    uart_set_irq_enables(uart0, true, false);
+    
+    // Set up UART connection to converter pico
+    uart_init(uart1, 115200);
+    gpio_set_function(UART1_TX_PIN, UART_FUNCSEL_NUM(uart1, UART1_TX_PIN));
 
-    stdio_init_all();
+    uart_set_hw_flow(uart1, false, false);
+    uart_set_format(uart1, 8, 1, UART_PARITY_NONE);
+    uart_set_fifo_enabled(uart1, false);
 
-    gpio_init(LED_PIN);
+    uart_puts(uart0, "\n\rUART START\n\r");
 
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
-
-    while (1) {
-        gpio_put(LED_PIN, 0);
-        sleep_ms(250);
-        gpio_put(LED_PIN, 1);
-        puts("Hello World\n");
-        sleep_ms(1000);
+    while (true) {
+        tight_loop_contents();
     }
 }
