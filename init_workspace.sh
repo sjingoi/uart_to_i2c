@@ -14,10 +14,12 @@ cd ..
 
 # Setup vscode to see the build commands
 mkdir -p .vscode
-cat > ./.vscode/settings.json <<'EOF'
+if [ ! -f ./.vscode/settings.json ]; then
+    cat > ./.vscode/settings.json <<'EOF'
 {
     "C_Cpp.default.compileCommands": [
         "${workspaceFolder}/build/compile_commands.json"
     ]
 }
 EOF
+fi
