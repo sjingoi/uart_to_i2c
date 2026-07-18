@@ -1,5 +1,5 @@
 if [ $# -eq 0 ]; then
-    echo "Usage: flash.sh [picotool path] [driver|converter]"
+    echo "Usage: flash.sh [picotool path] [slave|master]"
     exit 1
 fi
 
