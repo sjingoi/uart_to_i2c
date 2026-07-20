@@ -12,12 +12,6 @@
 #define I2C_SCL_PIN 5
 #define CAM_PWM_PIN 2
 
-// I2C reserves some addresses for special purposes. We exclude these from the scan.
-// These are any addresses of the form 000 0xxx or 111 1xxx
-bool reserved_addr(uint8_t addr) {
-    return (addr & 0x78) == 0 || (addr & 0x78) == 0x78;
-}
-
 bool ov7670_read_reg(uint8_t reg, uint8_t* value) {
     // Write the register address (keep control of the bus)
     int ret = i2c_write_blocking(i2c_default, I2C_CAM_ADDRESS, &reg, 1,
