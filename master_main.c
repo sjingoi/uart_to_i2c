@@ -24,10 +24,34 @@
 #include "pico/binary_info.h"
 #include "hardware/i2c.h"
 
+#define I2C_SLAVE_ADDRESS 0x21
+
 // I2C reserves some addresses for special purposes. We exclude these from the scan.
 // These are any addresses of the form 000 0xxx or 111 1xxx
 bool reserved_addr(uint8_t addr) {
     return (addr & 0x78) == 0 || (addr & 0x78) == 0x78;
+}
+
+bool ov7670_read_reg(uint8_t reg, uint8_t* value) {
+    // Write the register address (keep control of the bus)
+    int ret = i2c_write_blocking(i2c_default, I2C_SLAVE_ADDRESS, &reg, 1,
+                                false);  // true = repeated START
+
+    if (ret < 0) {
+        printf("Failed to write register address 0x%02X\n", reg);
+        return false;
+    }
+
+    // Read the register value
+    ret = i2c_read_blocking(i2c_default, I2C_SLAVE_ADDRESS, value, 1,
+                            false);  // false = STOP afterwards
+
+    if (ret < 0) {
+        printf("Failed to read register address 0x%02X\n", reg);
+        return false;
+    }
+
+    return (ret == 1);
 }
 
 int main() {
@@ -72,7 +96,26 @@ int main() {
         printf(ret < 0 ? "." : "@");
         printf(addr % 16 == 15 ? "\n" : "  ");
     }
-    printf("Done.\n");
+    printf("Done with the bus scan.\n");
+
+    uint8_t pid, ver;
+
+    if (ov7670_read_reg(0x0B, &ver)) {
+        printf("VER = 0x%02X\n", ver);
+    } else {
+        printf("Failed to read VER\n");
+    }
+
+    if (ov7670_read_reg(0x0A, &pid)) {
+        printf("PID = 0x%02X\n", pid);
+    } else {
+        printf("Failed to read PID\n");
+    }
+
+    while (1) {
+        tight_loop_contents();
+    }
+
     return 0;
 #endif
 }
