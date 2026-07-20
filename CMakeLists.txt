@@ -18,7 +18,7 @@ pico_enable_stdio_usb(master 1)
 
 pico_add_extra_outputs(master)
 
-target_link_libraries(master pico_stdlib hardware_uart hardware_i2c)
+target_link_libraries(master pico_stdlib hardware_uart hardware_i2c hardware_pwm)
 
 # slave binary
 
