@@ -12,28 +12,6 @@
 #define I2C_SCL_PIN 5
 #define CAM_PWM_PIN 2
 
-bool ov7670_read_reg(uint8_t reg, uint8_t* value) {
-    // Write the register address (keep control of the bus)
-    int ret = i2c_write_blocking(i2c_default, I2C_CAM_ADDRESS, &reg, 1,
-                                false);  // true = repeated START
-
-    if (ret < 0) {
-        printf("Failed to write register address 0x%02X\n", reg);
-        return false;
-    }
-
-    // Read the register value
-    ret = i2c_read_blocking(i2c_default, I2C_CAM_ADDRESS, value, 1,
-                            false);  // false = STOP afterwards
-
-    if (ret < 0) {
-        printf("Failed to read register address 0x%02X\n", reg);
-        return false;
-    }
-
-    return (ret == 1);
-}
-
 bool device_at_address(uint8_t addr) {
     // Perform a 1-byte dummy read from the probe address. If a slave
     // acknowledges this address, the function returns the number of bytes
