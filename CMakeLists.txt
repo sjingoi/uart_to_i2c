@@ -9,24 +9,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PICO_NO_PICOTOOL 1)
 pico_sdk_init()
 
-# Converter binary
+# master binary
 
-add_executable(converter converter_main.c)
+add_executable(master master_main.c)
 
-pico_enable_stdio_uart(converter 1)
-pico_enable_stdio_usb(converter 1)
+pico_enable_stdio_uart(master 1)
+pico_enable_stdio_usb(master 1)
 
-pico_add_extra_outputs(converter)
+pico_add_extra_outputs(master)
 
-target_link_libraries(converter pico_stdlib hardware_uart)
-
-# Driver binary
-
-add_executable(driver driver_main.c)
-
-pico_enable_stdio_uart(driver 1)
-pico_enable_stdio_usb(driver 1)
-
-pico_add_extra_outputs(driver)
-
-target_link_libraries(driver pico_stdlib hardware_uart)
+target_link_libraries(master pico_stdlib hardware_uart hardware_i2c hardware_pwm)
