@@ -12,6 +12,9 @@ cd build
 PICO_SDK_PATH=$1 cmake .. --fresh -DPICO_BOARD=pico2
 cd ..
 
+# Build the target so generated headers like camera_capture.pio.h are created
+cmake --build build --target master -j
+
 # Setup vscode to see the build commands
 mkdir -p .vscode
 if [ ! -f ./.vscode/settings.json ]; then

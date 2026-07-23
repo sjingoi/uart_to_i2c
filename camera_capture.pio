@@ -1,0 +1,35 @@
+;
+; camera_capture.pio
+;
+; Captures 8-bit parallel pixel data from an OV7670 camera, gated by HREF
+; (line valid). Frame sync (VSYNC) is handled on the ARM core via a GPIO
+; interrupt that restarts this state machine + its DMA channel -- trying to
+; encode VSYNC logic inside the state machine buys nothing and only
+; complicates the pixel loop.
+;
+; REQUIRED PIN LAYOUT
+; The "IN" pin base for this state machine must point at D0, with the
+; following GPIOs immediately after it, in order:
+;
+;   base+0 .. base+7   : D0..D7   (8-bit pixel data bus)
+;   base+8             : PCLK
+;   base+9             : HREF
+;
+; The state machine's JMP pin must ALSO be set to the same GPIO as HREF
+; (this is a separate, absolute-GPIO config from the "IN" mapping above --
+; see sm_config_set_jmp_pin() in the .c file).
+;
+; Autopush must be enabled with a threshold of 8 bits, so every "in pins, 8"
+; automatically pushes one completed byte into the RX FIFO for DMA to pick up.
+
+.program camera_capture
+
+.wrap_target
+wait_line:
+    wait 1 pin 9        ; wait for HREF to go high -> start of a valid line
+pixel:
+    wait 1 pin 8        ; wait for PCLK rising edge
+    in pins, 8          ; sample D0-D7 into ISR -> autopush to RX FIFO
+    wait 0 pin 8        ; wait for PCLK to fall before arming the next edge
+    jmp pin pixel        ; HREF (jmp pin) still high? -> grab next pixel
+.wrap                    ; HREF dropped -> loop back to wait_line

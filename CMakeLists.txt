@@ -13,9 +13,21 @@ pico_sdk_init()
 
 add_executable(master master_main.c)
 
+pico_generate_pio_header(
+    master
+    ${CMAKE_CURRENT_LIST_DIR}/camera_capture.pio
+)
+
 pico_enable_stdio_uart(master 1)
 pico_enable_stdio_usb(master 1)
 
 pico_add_extra_outputs(master)
 
-target_link_libraries(master pico_stdlib hardware_uart hardware_i2c hardware_pwm)
+target_link_libraries(master 
+    pico_stdlib 
+    hardware_uart 
+    hardware_i2c 
+    hardware_pwm
+    hardware_pio
+    hardware_dma
+)
