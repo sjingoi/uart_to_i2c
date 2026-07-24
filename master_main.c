@@ -18,8 +18,9 @@
 #define PCLK_PIN (DATA_PIN + 8)
 #define HREF_PIN (DATA_PIN + 9)
 
-#define WIDTH 320
-#define HEIGHT 240
+/* Use a much smaller frame to reduce memory use and transfer volume. */
+#define WIDTH 160
+#define HEIGHT 120
 #define BYTES_PER_PX 2
 #define FRAME_BYTES (WIDTH * HEIGHT * BYTES_PER_PX)
 
@@ -72,8 +73,11 @@ void dma_irq_handler() {
     frame_ready = true; // set the flag to indicate that a new frame is ready
 }
 
+volatile uint32_t vsync_count = 0;
+
 void vsync_irq_handler(uint gpio, uint32_t events) {
-    if (gpio != VSYNC_PIN) return; // ignore interrupts from other pins
+    if (gpio != VSYNC_PIN) return;
+    vsync_count++;
 
     pio_sm_set_enabled(pio0, cap_sm, false); // stop the PIO state machine
     pio_sm_clear_fifos(pio0, cap_sm); // clear the PIO FIFOs
@@ -141,7 +145,7 @@ int cam_write(uint8_t reg, uint8_t val) {
 }
 
 void dump_image() {
-    for (int i = 0; i < FRAME_BYTES; i++) {
+    for (int i = 0; i < FRAME_BYTES; i += 100) {
         printf("%02X ", frame_buf[i]);
         if ((i + 1) % 16 == 0) {
             printf("\n");
@@ -152,12 +156,12 @@ void dump_image() {
 void init_cam_registers() {
     cam_write(0x12, 0x80); // reset
     sleep_ms(100);
-    cam_write(0x12, 0x14);
+    cam_write(0x12, 0x18); // RGB + QQVGA (much smaller frame)
     cam_write(0x40, 0xD0);
     cam_write(0x11, 0x01);
     cam_write(0x0C, 0x00);
     cam_write(0x3E, 0x00);
-    cam_write(0x70, 0xBA);
+    cam_write(0x70, 0x3A);
     cam_write(0x71, 0x35);
     cam_write(0x72, 0x11);
     cam_write(0x73, 0xF1);
@@ -185,12 +189,18 @@ int main() {
     init_vsync_irq();
     dma_channel_start(cap_dma_chan); // start the DMA transfer
 
+    printf("Waiting for frames...\n");
+
     while (true) {
         if (frame_ready) {
             frame_ready = false;
             printf("Frame captured!\n");
             dump_image();
+            printf("Vsync count: %u\n", vsync_count);
+        } else {
+            printf("Frame not ready");
         }
+        sleep_ms(200);
     }
 
     return 0;
